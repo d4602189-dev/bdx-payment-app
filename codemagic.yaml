@@ -1,1 +1,68 @@
+workflows:
+  android-debug:
+    name: Build Android APK
+    max_build_duration: 30
+    scripts:
+      - name: Create Android project
+        script: |
+          mkdir -p app/src/main/java/com/sohag/paymentforwarder
+          mkdir -p app/src/main/res/values
 
+          cp AndroidManifest.xml app/src/main/AndroidManifest.xml
+          cp styles.xml app/src/main/res/values/styles.xml
+          cp MainActivity.java app/src/main/java/com/sohag/paymentforwarder/MainActivity.java
+          cp PaymentForwarder.java app/src/main/java/com/sohag/paymentforwarder/PaymentForwarder.java
+          cp SmsReceiver.java app/src/main/java/com/sohag/paymentforwarder/SmsReceiver.java
+
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+
+          rootProject.name = 'PaymentForwarder'
+          include ':app'
+          EOF
+
+          cat > build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.5.2' apply false
+          }
+          EOF
+
+          cat > app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+          }
+
+          android {
+              namespace 'com.sohag.paymentforwarder'
+              compileSdk 35
+
+              defaultConfig {
+                  applicationId 'com.sohag.paymentforwarder'
+                  minSdk 23
+                  targetSdk 35
+                  versionCode 1
+                  versionName '1.0'
+              }
+          }
+          EOF
+
+      - name: Build APK
+        script: |
+          gradle assembleDebug
+
+    artifacts:
+      - app/build/outputs/**/*.apk
