@@ -2,9 +2,28 @@ workflows:
   android-debug:
     name: Build Android APK
     max_build_duration: 20
+
     scripts:
-      - name: Create Android project
+      - name: Prepare files
         script: |
+          set -e
+
+          echo "Current files:"
+          find . -maxdepth 4 -type f | sort
+
+          mkdir -p work
+
+          if [ -f android_payment_forwarder.zip ]; then
+            echo "Unzipping android_payment_forwarder.zip"
+            unzip -o android_payment_forwarder.zip -d work
+          fi
+
+          if [ -f bdx_payment_app_ready.zip ]; then
+            echo "Unzipping bdx_payment_app_ready.zip"
+            unzip -o bdx_payment_app_ready.zip -d work
+          fi
+
+          rm -rf app
           mkdir -p app/src/main/java/com/sohag/paymentforwarder
           mkdir -p app/src/main/res/values
 
@@ -19,6 +38,12 @@ workflows:
           echo "MainActivity: $MAIN"
           echo "PaymentForwarder: $FORWARDER"
           echo "SmsReceiver: $RECEIVER"
+
+          test -n "$MANIFEST"
+          test -n "$STYLES"
+          test -n "$MAIN"
+          test -n "$FORWARDER"
+          test -n "$RECEIVER"
 
           cp "$MANIFEST" app/src/main/AndroidManifest.xml
           cp "$STYLES" app/src/main/res/values/styles.xml
@@ -58,9 +83,14 @@ workflows:
           }
           EOF
 
+          echo "Final app files:"
+          find app -type f | sort
+
       - name: Build APK
         script: |
+          set -e
           gradle assembleDebug --no-daemon
 
     artifacts:
-      - app/build/outputs/apk/debug/*.apk
+      - app/build/outputs/**/*.apk
+      - "**/*.apk"
